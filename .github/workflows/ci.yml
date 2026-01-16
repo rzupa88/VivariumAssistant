@@ -5,43 +5,50 @@ on:
     branches: ["main"]
   pull_request:
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    env:
-      POETRY_VIRTUALENVS_CREATE: true
-      POETRY_NO_INTERACTION: "1"
-      PYTHONPATH: src
+env:
+  POETRY_NO_INTERACTION: "1"
+  POETRY_VIRTUALENVS_CREATE: true
+  PYTHONPATH: "src"
 
+jobs:
+  lint:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip"
-
       - name: Install Poetry
         run: pip install "poetry>=2.0.0"
-
-      - name: Cache Poetry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.cache/pip
-          key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-
       - name: Install deps
         run: poetry install --with dev --no-root
-
-
-      - name: Lint (ruff)
+      - name: Ruff
         run: poetry run ruff check .
 
-      - name: Type check (mypy)
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Poetry
+        run: pip install "poetry>=2.0.0"
+      - name: Install deps
+        run: poetry install --with dev --no-root
+      - name: Mypy
         run: poetry run mypy .
 
-      - name: Tests (pytest)
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Poetry
+        run: pip install "poetry>=2.0.0"
+      - name: Install deps
+        run: poetry install --with dev --no-root
+      - name: Pytest
         run: poetry run pytest -q
