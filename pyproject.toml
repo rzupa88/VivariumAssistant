@@ -35,3 +35,6 @@ strict = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.poetry]
+packages = [{ include = "vivariumassistant", from = "src" }]
