@@ -1,7 +1,8 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from packages.engine.lighting import compute_daylight_level
-from packages.core.config_schema import LightingProfile
+
+from vivariumassistant.packages.engine.lighting import compute_daylight_level
+from vivariumassistant.packages.core.config_schema import LightingProfile
 
 def test_daylight_level_bounds():
     prof = LightingProfile(
