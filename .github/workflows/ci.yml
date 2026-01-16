@@ -18,10 +18,10 @@ jobs:
           python-version: "3.12"
 
       - name: Install Poetry
-        run: pip install poetry
+        run: pip install "poetry>=2.0.0"
 
       - name: Install deps
-        run: poetry install
+        run: poetry install --with dev
 
       - name: Lint (ruff)
         run: poetry run ruff check .
