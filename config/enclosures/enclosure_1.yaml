@@ -1,0 +1,46 @@
+id: enclosure_1
+name: "Crested Gecko Vivarium"
+timezone: America/New_York
+
+devices:
+  - id: light_day
+    name: "Daylight LED"
+    kind: light
+    control: pwm
+    driver: pca9685
+    params:
+      channel: 0
+      pwm_freq_hz: 1000
+      min: 0.0
+      max: 1.0
+
+  - id: uvb
+    name: "UVB Fixture"
+    kind: uvb
+    control: relay
+    driver: i2c_relay
+    params:
+      channel: 1
+
+  - id: mister
+    name: "Mister"
+    kind: mist
+    control: relay
+    driver: i2c_relay
+    params:
+      channel: 2
+
+  - id: waterfall
+    name: "Waterfall Pump"
+    kind: pump
+    control: relay
+    driver: i2c_relay
+    params:
+      channel: 3
+
+sensors:
+  - id: climate_1
+    kind: temp_humidity
+    driver: sht3x
+    params:
+      i2c_addr: "0x44"

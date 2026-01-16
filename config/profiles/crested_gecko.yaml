@@ -1,0 +1,22 @@
+id: crested_gecko
+
+lighting:
+  day_start: "08:00"
+  day_end: "20:00"
+  sunrise_minutes: 45
+  sunset_minutes: 45
+  max_brightness: 0.85
+
+uvb:
+  start: "10:00"
+  end: "18:00"
+
+mist:
+  bursts:
+    - at: "07:30"
+      seconds: 20
+    - at: "20:30"
+      seconds: 25
+  safety:
+    min_minutes_between: 120
+    max_seconds_per_day: 240
