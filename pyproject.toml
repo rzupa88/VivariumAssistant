@@ -37,4 +37,5 @@ strict = false
 testpaths = ["tests"]
 
 [tool.poetry]
+package-mode = true
 packages = [{ include = "vivariumassistant", from = "src" }]
