@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from packages.core.device_state import DeviceState
+from vivariumassistant.packages.core.device_state import DeviceState
 
 class PWMDriver(ABC):
     @abstractmethod

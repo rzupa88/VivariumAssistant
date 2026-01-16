@@ -3,9 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 import yaml
 
-from packages.core.config_schema import EnclosureConfig, ProfileConfig
+from vivariumassistant.packages.core.config_schema import EnclosureConfig, ProfileConfig
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[4]
 
 def _load_yaml(path: Path) -> dict:
     data = yaml.safe_load(path.read_text())

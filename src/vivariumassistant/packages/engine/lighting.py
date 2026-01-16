@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from packages.core.config_schema import LightingProfile
+from vivariumassistant.packages.core.config_schema import LightingProfile
 
 
 def _parse_hhmm(s: str) -> time:

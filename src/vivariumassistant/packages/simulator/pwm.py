@@ -1,5 +1,5 @@
 from __future__ import annotations
-from packages.drivers.base import PWMDriver
+from vivariumassistant.packages.drivers.base import PWMDriver
 
 class SimPWMDriver(PWMDriver):
     def __init__(self):

@@ -4,14 +4,14 @@ import asyncio
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from packages.core.config_loader import load_enclosure, load_profile
-from packages.core.device_state import DeviceState
-from packages.engine.lighting import compute_daylight_level
-from packages.engine.uvb import uvb_should_be_on
-from packages.engine.mist import MistRuntime, mist_burst_due
+from vivariumassistant.packages.core.config_loader import load_enclosure, load_profile
+from vivariumassistant.packages.core.device_state import DeviceState
+from vivariumassistant.packages.engine.lighting import compute_daylight_level
+from vivariumassistant.packages.engine.uvb import uvb_should_be_on
+from vivariumassistant.packages.engine.mist import MistRuntime, mist_burst_due
 
-from packages.simulator.pwm import SimPWMDriver
-from packages.simulator.relay import SimRelayDriver
+from vivariumassistant.packages.simulator.pwm import SimPWMDriver
+from vivariumassistant.packages.simulator.relay import SimRelayDriver
 
 
 class SimAgent:

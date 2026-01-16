@@ -1,5 +1,5 @@
 import asyncio
-from apps.agent.sim_agent import SimAgent
+from vivariumassistant.apps.agent.sim_agent import SimAgent
 
 async def main():
     agent = SimAgent(enclosure_id="enclosure_1", profile_id="crested_gecko")

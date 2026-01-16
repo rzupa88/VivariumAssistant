@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from packages.core.config_schema import UVBProfile
+from vivariumassistant.packages.core.config_schema import UVBProfile
 
 def _parse_hhmm(s: str) -> time:
     hh, mm = s.split(":")
