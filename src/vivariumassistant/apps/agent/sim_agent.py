@@ -36,7 +36,7 @@ class SimAgent:
             level = compute_daylight_level(now, self.enc.timezone, self.prof.lighting).level
             ch = int(light.params.get("channel", 0))
             await self.pwm.set_level(ch, level)
-            desired["light_day"] = DeviceState(on=(level > 0.001), level=level)
+            desired["light_day"] = DeviceState(device_id="light_day", on=(level > 0.001), level=level)
 
         # UVB (relay)
         if self.prof.uvb and "uvb" in self.devices:
@@ -44,7 +44,7 @@ class SimAgent:
             ch = int(uvb.params.get("channel", 1))
             on = uvb_should_be_on(now, self.enc.timezone, self.prof.uvb)
             await self.relay.set_on(ch, on)
-            desired["uvb"] = DeviceState(on=on)
+            desired["uvb"] = DeviceState(device_id="uvb", on=on)
 
         # MIST (relay bursts)
         if self.prof.mist and "mister" in self.devices:
@@ -53,7 +53,7 @@ class SimAgent:
             seconds = mist_burst_due(now, self.enc.timezone, self.prof.mist, self.mist_rt)
             if seconds:
                 await self.relay.set_on(ch, True)
-                desired["mister"] = DeviceState(on=True, meta={"burst_seconds": seconds})
+                desired["mister"] = DeviceState(device_id="mister", on=True, meta={"burst_seconds": seconds})
                 # simulate the burst duration without blocking the whole system too long
                 await asyncio.sleep(min(seconds, 5))  # cap sim sleep so loop stays responsive
                 await self.relay.set_on(ch, False)
@@ -62,14 +62,14 @@ class SimAgent:
                 self.mist_rt.daily_seconds_used[key] = self.mist_rt.daily_seconds_used.get(key, 0) + int(seconds)
             else:
                 await self.relay.set_on(ch, False)
-                desired["mister"] = DeviceState(on=False)
+                desired["mister"] = DeviceState(device_id="mister", on=False)
 
         # WATERFALL (keep OFF in V1 SIM until we add its schedule)
         if "waterfall" in self.devices:
             wf = self.devices["waterfall"]
             ch = int(wf.params.get("channel", 3))
             await self.relay.set_on(ch, False)
-            desired["waterfall"] = DeviceState(on=False)
+            desired["waterfall"] = DeviceState(device_id="waterfall", on=False)
 
         return desired
 
