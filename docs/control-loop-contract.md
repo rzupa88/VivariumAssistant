@@ -6,20 +6,20 @@ Define a deterministic, hardware-agnostic control loop that converts configurati
 ## Inputs
 - EnclosureConfig
 - ProfileConfig
-- now (datetime)
+- now (datetime; provided by the clock abstraction)
 - observations (sensor readings; simulated in v0.1)
-- overrides (optional; manual override with timeout)
-- previous_state (optional; last desired state)
+- overrides (optional; resolved override set, active and unexpired)
+- previous_state (optional; last desired device state)
 
 ## Outputs
 A list of DeviceState records:
 - device_id: str
 - on: bool
 - level: Optional[float] (0.0–1.0)
-- meta: dict (optional reasoning/debug context)
+- meta: dict (optional; reasoning, scheduling/debug context)
 
 ## Determinism
-Same inputs => same outputs. No direct reading from:
+Same inputs => same outputs. The control loop must not directly read from:
 - system clock
 - filesystem
 - network
@@ -36,7 +36,7 @@ Priority order:
 The loop runs on a fixed interval but uses only `now` provided by the clock abstraction. Simulation and real execution must behave identically given the same inputs.
 
 ## Failure Behavior
-Config validation happens before the loop. Missing sensors should fall back to safe defaults for v0.1.
+Configuration validation happens before the loop. Missing sensors should fall back to safe defaults for v0.1. Failures must result in explicit DeviceState outputs (never implicit no-ops).
 
 ## Non-Goals (v0.1)
 - GPIO/I2C interactions
