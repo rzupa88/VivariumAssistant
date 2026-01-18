@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -12,6 +13,9 @@ from vivariumassistant.packages.engine.mist import MistRuntime, mist_burst_due
 
 from vivariumassistant.packages.simulator.pwm import SimPWMDriver
 from vivariumassistant.packages.simulator.relay import SimRelayDriver
+
+
+logger = logging.getLogger("vivariumassistant.agent.sim")
 
 
 class SimAgent:
@@ -33,10 +37,16 @@ class SimAgent:
         # LIGHT (PWM)
         if "light_day" in self.devices:
             light = self.devices["light_day"]
-            level = compute_daylight_level(now, self.enc.timezone, self.prof.lighting).level
+            level = compute_daylight_level(
+                now, self.enc.timezone, self.prof.lighting
+            ).level
             ch = int(light.params.get("channel", 0))
             await self.pwm.set_level(ch, level)
-            desired["light_day"] = DeviceState(device_id="light_day", on=(level > 0.001), level=level)
+            desired["light_day"] = DeviceState(
+                device_id="light_day",
+                on=(level > 0.001),
+                level=level,
+            )
 
         # UVB (relay)
         if self.prof.uvb and "uvb" in self.devices:
@@ -50,21 +60,33 @@ class SimAgent:
         if self.prof.mist and "mister" in self.devices:
             mister = self.devices["mister"]
             ch = int(mister.params.get("channel", 2))
-            seconds = mist_burst_due(now, self.enc.timezone, self.prof.mist, self.mist_rt)
+            seconds = mist_burst_due(
+                now, self.enc.timezone, self.prof.mist, self.mist_rt
+            )
+
             if seconds:
                 await self.relay.set_on(ch, True)
-                desired["mister"] = DeviceState(device_id="mister", on=True, meta={"burst_seconds": seconds})
-                # simulate the burst duration without blocking the whole system too long
-                await asyncio.sleep(min(seconds, 5))  # cap sim sleep so loop stays responsive
+                desired["mister"] = DeviceState(
+                    device_id="mister",
+                    on=True,
+                    meta={"burst_seconds": seconds},
+                )
+
+                # simulate burst duration without blocking loop too long
+                await asyncio.sleep(min(seconds, 5))
+
                 await self.relay.set_on(ch, False)
+
                 self.mist_rt.last_burst_at = now
                 key = now.date().isoformat()
-                self.mist_rt.daily_seconds_used[key] = self.mist_rt.daily_seconds_used.get(key, 0) + int(seconds)
+                self.mist_rt.daily_seconds_used[key] = (
+                    self.mist_rt.daily_seconds_used.get(key, 0) + int(seconds)
+                )
             else:
                 await self.relay.set_on(ch, False)
                 desired["mister"] = DeviceState(device_id="mister", on=False)
 
-        # WATERFALL (keep OFF in V1 SIM until we add its schedule)
+        # WATERFALL (OFF in v1 SIM)
         if "waterfall" in self.devices:
             wf = self.devices["waterfall"]
             ch = int(wf.params.get("channel", 3))
@@ -76,7 +98,18 @@ class SimAgent:
     async def run(self, interval_seconds: int = 5):
         while True:
             desired = await self.tick()
-            print(f"\n[{datetime.now().isoformat()}] Desired states:")
-            for k, v in desired.items():
-                print(f"  - {k}: on={v.on} level={v.level} meta={v.meta}")
+
+            logger.info(
+                "control_tick",
+                extra={
+                    "event": "control_tick",
+                    "enclosure_id": self.enc.id,
+                    "profile_id": self.prof.id,
+                    "now": datetime.now(
+                        tz=ZoneInfo(self.enc.timezone)
+                    ).isoformat(),
+                    "desired": {k: v.model_dump() for k, v in desired.items()},
+                },
+            )
+
             await asyncio.sleep(interval_seconds)
