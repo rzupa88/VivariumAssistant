@@ -48,8 +48,17 @@ class MistSafety(BaseModel):
     min_minutes_between: int = 120
     max_seconds_per_day: int = 240
 
+class MistWindow(BaseModel):
+    start: str  # "HH:MM"
+    end: str    # "HH:MM"
+    every_minutes: int
+    seconds: int
+
 class MistProfile(BaseModel):
+    # Mode A: fixed bursts (existing)
     bursts: list[MistBurst] = Field(default_factory=list)
+    # Mode B: window schedule (new)
+    windows: list[MistWindow] = Field(default_factory=list)
     safety: MistSafety = Field(default_factory=MistSafety)
 
 class ProfileConfig(BaseModel):
