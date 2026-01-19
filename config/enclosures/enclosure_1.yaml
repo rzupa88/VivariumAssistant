@@ -2,6 +2,9 @@ id: enclosure_1
 name: "Crested Gecko Vivarium"
 timezone: America/New_York
 
+runtime:
+  mode: sim   # sim | real
+
 devices:
   - id: light_day
     name: "Daylight LED"
