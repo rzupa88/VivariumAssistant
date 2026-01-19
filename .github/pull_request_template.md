@@ -5,8 +5,8 @@
 - 
 
 ## How to test
-- [ ] `PYTHONPATH=. poetry run python -m pytest`
-- [ ] `PYTHONPATH=. poetry run python scripts/run_sim.py`
+- [ ] `poetry run pytest`
+- [ ] `poetry run python scripts/run_sim.py` (if applicable)
 
 ## Screenshots / logs (if relevant)
 -
