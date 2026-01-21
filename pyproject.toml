@@ -40,3 +40,9 @@ testpaths = ["tests"]
 [tool.poetry]
 package-mode = true
 packages = [{ include = "vivariumassistant", from = "src" }]
+
+[tool.poetry.group.hardware]
+optional = true
+
+[tool.poetry.group.hardware.dependencies]
+gpiozero = "^2.0"

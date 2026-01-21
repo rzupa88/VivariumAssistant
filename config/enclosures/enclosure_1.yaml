@@ -24,6 +24,7 @@ devices:
     driver: i2c_relay
     params:
       channel: 1
+      gpio_pin: 16
 
   - id: mister
     name: "Mister"
@@ -32,6 +33,7 @@ devices:
     driver: i2c_relay
     params:
       channel: 2
+      gpio_pin: 18
 
   - id: waterfall
     name: "Waterfall Pump"
@@ -40,6 +42,7 @@ devices:
     driver: i2c_relay
     params:
       channel: 3
+      gpio_pin: 22
 
 sensors:
   - id: climate_1
