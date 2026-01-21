@@ -3,11 +3,14 @@ from __future__ import annotations
 import os
 import platform
 from dataclasses import dataclass
+from typing import Any
 
 from vivariumassistant.packages.core.config_schema import EnclosureConfig
 from vivariumassistant.packages.drivers.base import PWMDriver, RelayDriver
 from vivariumassistant.packages.simulator.pwm import SimPWMDriver
 from vivariumassistant.packages.simulator.relay import SimRelayDriver
+
+VA_GPIOZERO_MODULE = "gpiozero"
 
 
 @dataclass(frozen=True)
@@ -33,6 +36,7 @@ def _assert_supported_real_platform() -> None:
     system = platform.system().lower()
     machine = platform.machine().lower()
 
+    # Typical Pi: Linux + arm/arm64 (aarch64)
     is_linux = system == "linux"
     is_arm = any(x in machine for x in ("arm", "aarch64"))
 
@@ -52,26 +56,22 @@ def _assert_real_deps_available() -> None:
     try:
         import importlib
 
-        importlib.import_module("gpiozero")
+        importlib.import_module(VA_GPIOZERO_MODULE)
     except Exception as e:
         raise RuntimeError(
-            "REAL mode requires the 'gpiozero' dependency. "
+            f"REAL mode requires the '{VA_GPIOZERO_MODULE}' dependency. "
             "Install it (on Pi) with: poetry add gpiozero"
         ) from e
 
 
-def _parse_int_param(params: dict, key: str) -> int | None:
-    """
-    Best-effort safe int parsing from config params.
-    Returns None if missing; raises if present but invalid.
-    """
-    raw = params.get(key)
-    if raw is None:
-        return None
+def _get_int_param(params: dict[str, Any], key: str) -> int:
+    val = params.get(key)
+    if val is None:
+        raise RuntimeError(f"Missing required device param: {key}")
     try:
-        return int(raw)
+        return int(val)
     except Exception as e:
-        raise ValueError(f"Invalid int for params.{key}: {raw!r}") from e
+        raise RuntimeError(f"Invalid int for device param '{key}': {val!r}") from e
 
 
 def build_drivers(enc: EnclosureConfig) -> DriverBundle:
@@ -84,38 +84,51 @@ def build_drivers(enc: EnclosureConfig) -> DriverBundle:
                 "Set VA_ENABLE_REAL=1 to explicitly allow hardware drivers."
             )
 
+        # Provide clear, actionable errors before we ever touch GPIO.
         _assert_supported_real_platform()
         _assert_real_deps_available()
 
-        # IMPORTANT: Keep this import inside the REAL branch so dev environments don't require gpiozero.
-        from vivariumassistant.packages.drivers.real_relay_gpiozero import (
-            RealRelayDriverGpioZero,
-        )
+        # IMPORTANT: names here must match your class names exactly.
+        from vivariumassistant.packages.drivers.real_pwm_gpiozero import RealPWMDriverGpioZero
+        from vivariumassistant.packages.drivers.real_relay_gpiozero import RealRelayDriverGpioZero
 
-        relay = RealRelayDriverGpioZero()
+        # Conservative mapping for now:
+        # - light -> PWM
+        # - uvb/mist/pump -> relay
+        pwm_kinds = {"light"}
+        relay_kinds = {"uvb", "mist", "pump"}
 
-        registered_any = False
+        pwm_pin_by_channel: dict[int, int] = {}
+        relay_pin_by_channel: dict[int, int] = {}
 
-        # Register relay channels based on device params.
-        # Expect: params: { channel: 1, bcm_pin: 17 }
         for d in enc.devices:
-            ch = _parse_int_param(d.params, "channel")
-            bcm_pin = _parse_int_param(d.params, "bcm_pin")
-
-            if ch is None or bcm_pin is None:
+            params: dict[str, Any] = d.params
+            gpio_pin = params.get("gpio_pin")
+            if gpio_pin is None:
                 continue
 
-            relay.register_channel(channel=ch, bcm_pin=bcm_pin)
-            registered_any = True
+            ch = _get_int_param(params, "channel")
+            pin = _get_int_param(params, "gpio_pin")
 
-        if not registered_any:
-            raise RuntimeError(
-                "REAL mode requires at least one relay device with params.channel and params.bcm_pin set "
-                "(example: params: {channel: 1, bcm_pin: 17})."
-            )
+            if d.kind in pwm_kinds:
+                pwm_pin_by_channel[ch] = pin
+            elif d.kind in relay_kinds:
+                relay_pin_by_channel[ch] = pin
 
-        # PWM stays SIM until you implement the real PWM driver.
-        return DriverBundle(pwm=SimPWMDriver(), relay=relay, mode="real")
+        # Allow REAL mode with only relay, only pwm, or both.
+        pwm: PWMDriver = (
+            RealPWMDriverGpioZero(pin_by_channel=pwm_pin_by_channel)
+            if pwm_pin_by_channel
+            else SimPWMDriver()
+        )
+        relay: RelayDriver = (
+            RealRelayDriverGpioZero(pin_by_channel=relay_pin_by_channel)
+            if relay_pin_by_channel
+            else SimRelayDriver()
+        )
+
+        # Safety note: REAL drivers should default OFF / 0.0 on creation.
+        return DriverBundle(pwm=pwm, relay=relay, mode="real")
 
     # Default: SIM drivers
     return DriverBundle(pwm=SimPWMDriver(), relay=SimRelayDriver(), mode="sim")
