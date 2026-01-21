@@ -4,6 +4,7 @@ from typing import Protocol, cast
 
 from vivariumassistant.packages.drivers.base import RelayDriver
 
+# Guarded import so non-Pi dev environments don't require gpiozero.
 try:
     from gpiozero import DigitalOutputDevice  # type: ignore[import-untyped]
 except Exception:  # pragma: no cover
@@ -12,7 +13,6 @@ except Exception:  # pragma: no cover
 
 class _RelayDevice(Protocol):
     """Minimum interface we need from a relay output device."""
-
     def on(self) -> None: ...
     def off(self) -> None: ...
     def close(self) -> None: ...
@@ -24,11 +24,10 @@ class RealRelayDriverGpioZero(RelayDriver):
 
     Safety:
     - Outputs default OFF on creation (initial_value=False).
-    - This driver should only be constructed behind the REAL-mode safety gate.
+    - This driver should only be constructed behind REAL-mode safety gate.
     """
 
-    def __init__(self) -> None:
-        # DigitalOutputDevice is either a constructor or None depending on environment.
+    def __init__(self, pin_by_channel: dict[int, int]) -> None:
         if DigitalOutputDevice is None:
             raise RuntimeError(
                 "gpiozero is not available. Install it on the Raspberry Pi environment "
@@ -38,14 +37,10 @@ class RealRelayDriverGpioZero(RelayDriver):
         self._channels: dict[int, _RelayDevice] = {}
         self._state: dict[int, bool] = {}
 
-    def register_channel(self, channel: int, bcm_pin: int) -> None:
-        """
-        Register a relay output channel mapped to a BCM GPIO pin.
-        """
-        # gpiozero creates the device and we force a safe default OFF
-        dev = DigitalOutputDevice(bcm_pin, initial_value=False)  # type: ignore[misc]
-        self._channels[channel] = cast(_RelayDevice, dev)
-        self._state[channel] = False
+        for ch, bcm_pin in pin_by_channel.items():
+            dev = DigitalOutputDevice(bcm_pin, initial_value=False)  # type: ignore[misc]
+            self._channels[ch] = cast(_RelayDevice, dev)
+            self._state[ch] = False
 
     async def set_on(self, channel: int, on: bool) -> None:
         dev = self._channels[channel]
@@ -56,13 +51,11 @@ class RealRelayDriverGpioZero(RelayDriver):
         self._state[channel] = on
 
     async def get_on(self, channel: int) -> bool:
-        return self._state.get(channel, False)
+        return bool(self._state.get(channel, False))
 
     def close(self) -> None:
-        """
-        Best-effort safe shutdown.
-        """
-        for _, dev in self._channels.items():
+        """Best-effort safe shutdown."""
+        for dev in self._channels.values():
             try:
                 dev.off()
             except Exception:
